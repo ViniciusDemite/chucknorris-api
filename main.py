@@ -1,54 +1,62 @@
-import mimetypes
-from flask import Flask, Response, request, jsonify
+from flask import Flask, request, make_response, jsonify
 import requests
 
 
 BASE_URL = '/api/jokes'
 
 app = Flask(__name__)
+error_response = {
+  'error': 'Not Found',
+  'message': '',
+}
 
 @app.get(f'{BASE_URL}/random')
 def random():
   joke = requests.get('https://api.chucknorris.io/jokes/random')
 
-  return Response(response=joke, status=200, mimetype='application/json')
+  return make_response(joke.json(), 200)
 
 @app.get(f'{BASE_URL}/category/<string:name>')
 def category(name):
   joke = requests.get(f'https://api.chucknorris.io/jokes/random?category={name}')
 
   if joke.status_code == 404:
-    return Response(status=404, mimetype='application/json')
+    error_response['message'] = f'Não foi possível encontrar uma categoria com o nome: {name}'
+    return make_response(jsonify(error_response), 404)
 
-  return Response(response=joke, status=200, mimetype='application/json')
+  return make_response(joke.json(), 200)
 
 @app.get(f'{BASE_URL}/filter')
 def filter():
   search = request.args.get('search')
 
   if search == None:
-    return Response(status=400, mimetype='application/json')
+    error_response['error'] = 'Missing Param'
+    error_response['message'] = 'É necessário utilizar o parâmetro "search" para buscar piadas'
+    return make_response(jsonify(error_response), 400)
 
   try:
     limit = int(request.args.get('limit', default=10))
   except ValueError:
-    return Response(response='O limite deve ser um número inteiro!!!', status=400, mimetype='application/json')
+    error_response['error'] = 'Type Error'
+    error_response['message'] = 'É necessário passar um valor inteiro no parâmetro "limit"'
+    return make_response(jsonify(error_response), 400)
 
   response = requests.get(f'https://api.chucknorris.io/jokes/search?query={search}&limit={limit}')
 
-  if response.status_code == 404:
-    return Response(status=404, mimetype='application/json')
-
   jokes = response.json()
   jokes_length = len(jokes['result'])
+
+  if jokes_length == 0:
+    error_response['message'] = f'Não foi possível encontrar nenhuma piada com o termo pesquisado: {search}'
+    return make_response(jsonify(error_response), 404)
 
   results = {
     'limit': limit,
     'results': jokes['result'][:limit] if limit <= jokes_length else jokes['result']
   }
 
-  # return Response(response=results, status=200, mimetype='application/json')
-  return results
+  return make_response(jsonify(results), 200)
 
 
 if __name__ == "__main__":
