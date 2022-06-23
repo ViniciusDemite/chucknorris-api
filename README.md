@@ -38,7 +38,7 @@ Após esses comandos o projeto estará rodando na porta 5000 da sua rede.
 
 ### Com Compose
 
-Execute o comando `docker compose up` na raiz do projeto e seu projeto estará rodando na porta 5000 da sua rede, caso não tenha alterado no arquivo docker-compose.yml.
+Execute o comando `docker compose up -d` na raiz do projeto e seu projeto estará rodando na porta 5000 da sua rede, caso não tenha alterado no arquivo docker-compose.yml.
 
 ## Referências
 
